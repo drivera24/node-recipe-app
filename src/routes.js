@@ -9,7 +9,7 @@ router.get('/', (req, res) => {
 
 router.get('/recipes', async (req, res) => {
 	const db = await getDbConnection()
-	const recipes = await db.all('SELECT * FROM recipes')
+	const recipes = await db.all('SELECT * FROM recipes ORDER BY title COLLATE NOCASE')
 	res.render('recipes', { recipes })
 })
 
@@ -38,6 +38,26 @@ router.post('/recipes/:id/edit', async (req, res) => {
 		recipeId,
 	])
 	res.redirect(`/recipes/${recipeId}`)
+})
+
+// Delete a recipe
+router.post('/recipes/:id/delete', async (req, res) => {
+	const db = await getDbConnection()
+	const recipeId = req.params.id
+	const result = await db.run('DELETE FROM recipes WHERE id = ?', [recipeId])
+	if (result && result.changes === 0) {
+		return res.status(404).send('Recipe not found')
+	}
+	res.redirect('/recipes')
+})
+
+// (Removed duplicate GET /recipes route)
+router.get('/recipes/random', async (req, res) => {
+	const db = await getDbConnection()
+	const recipes = await db.all('SELECT * FROM recipes')
+	const randomIndex = Math.floor(Math.random() * recipes.length)
+	const recipe = recipes[randomIndex]
+	res.render('recipe', { recipe })
 })
 
 module.exports = router
